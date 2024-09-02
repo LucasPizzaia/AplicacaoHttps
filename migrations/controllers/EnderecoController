@@ -1,3 +1,4 @@
+const axios = require('axios')
 const { Endereco } = require('../models');
 
 // Criação de um novo endereço
@@ -21,6 +22,37 @@ exports.createEndereco = async (req, res) => {
     res.status(500).json({ error: 'Erro ao criar endereço', details: error.message });
   }
 };
+
+exports.createEnderecoByCep = async (req, res) => {
+  try {
+    const { Cep } = req.body;
+
+    // busca do endereço na API VIACEP
+    const response = await axios.get(`https://viacep.com.br/ws/${Cep}/json/`);
+
+    if (response.data.erro){
+      return res.status(4040).json({ error : 'CEP não encontrado'});
+    }
+    const { logradouro, complemento, bairro, localidade, uf, ibge } = response.data;
+    const novoEndereco = await Endereco.create({
+      Cep,
+      Logradouro: logradouro,
+      Complemento: complemento,
+      Bairro: bairro,
+      Cidade: localidade,
+      Estado: uf,
+      MunicipioIBGE: ibge,
+    });
+
+    res.status(201).json(novoEndereco);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar e criar endereço', details: error.message });
+  }
+};
+  
+
+
+
 
 // Leitura de todos os endereços
 exports.getAllEnderecos = async (req, res) => {
